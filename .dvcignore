@@ -1,0 +1,6 @@
+# DVC Ignore
+.git/
+.venv/
+venv/
+*.pyc
+.pytest_cache/
