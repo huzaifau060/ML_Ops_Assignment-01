@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: redis:7.2.4-alpine
+    container_name: triage-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - triage-net
+
+  api:
+    image: ${DOCKER_USER:-faststudent}/breast-cancer-triage-api:${IMAGE_TAG:-1.0.0}
+    container_name: triage-api
+    restart: unless-stopped
+    environment:
+      - MODEL_PATH=artifacts/model.joblib
+      - DECISION_THRESHOLD=${DECISION_THRESHOLD:-0.5}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MODEL_VERSION=${MODEL_VERSION:-1.0.0}
+      - GIT_SHA=${GIT_SHA:-unknown}
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - triage-net
+
+volumes:
+  redis-data:
+
+networks:
+  triage-net:
+    driver: bridge
