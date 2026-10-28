@@ -1,0 +1,23 @@
+# Dockerfile.naive
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY . /app
+
+RUN pip3 install --no-cache-dir -r requirements-dev.txt
+
+# Train model inside naive image
+RUN python3 training/prepare_data.py && \
+    python3 training/train.py --data-path data/raw/breast_cancer.csv --output-dir artifacts --model-version 1.0.0
+
+EXPOSE 8000
+
+CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
